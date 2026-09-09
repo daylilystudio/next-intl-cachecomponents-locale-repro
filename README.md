@@ -4,6 +4,11 @@ Minimal reproduction: with `cacheComponents: true` and `next/root-params`, a cli
 navigation that changes the `[locale]` root param re-renders the **page** segment but reuses the
 **layout** segment from the previous locale.
 
+**Live demo: https://next-intl-cachecomponents-locale-re.vercel.app**
+
+Open `/`, then click `en` in the header — the green PAGE box switches to `en` while the red
+LAYOUT box stays on `zh-TW`.
+
 - next `16.3.4`
 - next-intl `4.14.2`
 - react `19.2.8`
@@ -51,16 +56,16 @@ Every server-rendered surface is correct for every URL:
 ```bash
 for p in / /en /about /en/about; do
   printf "%-11s " "$p"
-  curl -s "http://localhost:3000$p" | grep -oE '(LAYOUT|PAGE) locale: <b>[^<]*' | tr '\n' ' '
+  curl -s "http://localhost:3000$p" | grep -oE 'locale: <b>[a-zA-Z-]*' | sed 's/locale: <b>//' | tr '\n' ' '
   echo
 done
 ```
 
 ```
-/           LAYOUT locale: <b>zh-TW PAGE locale: <b>zh-TW
-/en         LAYOUT locale: <b>en PAGE locale: <b>en
-/about      LAYOUT locale: <b>zh-TW PAGE locale: <b>zh-TW
-/en/about   LAYOUT locale: <b>en PAGE locale: <b>en
+/           zh-TW zh-TW
+/en         en en
+/about      zh-TW zh-TW
+/en/about   en en
 ```
 
 The full RSC response also carries the resolved locale:
@@ -98,6 +103,14 @@ md5 -q /tmp/tree-zh.txt /tmp/tree-en.txt
 IDENTICAL
 3989433d5e237deef5746b41cf4d7019
 3989433d5e237deef5746b41cf4d7019
+```
+
+Same result against the deployed demo (`x-nextjs-prerender: 1`, `x-nextjs-stale-time: 300`):
+
+```
+sizes: 304 vs 304
+md5 zh: e6701dea7cea11937f3afcc7d3011d2e
+md5 en: e6701dea7cea11937f3afcc7d3011d2e
 ```
 
 Both return:
